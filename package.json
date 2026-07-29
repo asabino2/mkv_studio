@@ -1,0 +1,17 @@
+{
+  "name": "mp4_to_mkv",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.16",
+    "busboy": "^1.6.0",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "franc": "^6.2.0",
+    "languagedetect": "^2.0.0"
+  }
+}

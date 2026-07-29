@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MKV Studio Converter - Conversor Inteligente MP4/AVI para MKV</title>
+  <meta name="description" content="Aplicação web para multiplexar vídeos MP4, AVI com suas legendas SRT em arquivos MKV com detecção de idioma e downloads em lote.">
+
+  <!-- Fonte Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Ícones Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="dark-theme">
+  <div class="app-wrapper">
+
+    <!-- Cabeçalho Principal -->
+    <header class="app-header">
+      <div class="logo-container">
+        <div class="logo-icon">
+          <i class="fa-solid fa-film"></i>
+          <span class="pulse-ring"></span>
+        </div>
+        <div class="logo-text">
+          <h1>MKV Studio Converter</h1>
+          <p>Multiplexador Inteligente de Vídeo e Legendas SRT com Suporte a Pastas e Upload com Download ZIP</p>
+        </div>
+      </div>
+      <div class="header-status">
+        <span class="status-indicator online" id="statusIndicator">
+          <span class="status-dot"></span> <span id="statusText">Pronto</span>
+        </span>
+      </div>
+    </header>
+
+    <!-- Seletor de Modo de Operação (Abas) -->
+    <div class="mode-tabs">
+      <button type="button" class="tab-btn active" id="tabFolderMode">
+        <i class="fa-solid fa-folder-tree"></i> Modo Pasta (Sistema Local)
+      </button>
+      <button type="button" class="tab-btn" id="tabFilesMode">
+        <i class="fa-solid fa-file-arrow-up"></i> Modo Importar Arquivos (Upload & Download ZIP)
+      </button>
+    </div>
+
+    <!-- Layout de Colunas Principal -->
+    <main class="app-main">
+
+      <!-- Coluna Esquerda: Configuração e Lista de Arquivos -->
+      <section class="left-panel">
+
+        <!-- Cartão de Configuração (Modo Pasta) -->
+        <div class="card glass-card" id="folderConfigPanel">
+          <div class="card-header">
+            <h2><i class="fa-solid fa-sliders"></i> Seleção de Pastas do Sistema</h2>
+          </div>
+          <div class="card-body">
+
+            <div class="form-group">
+              <label for="sourceDir">
+                <i class="fa-solid fa-folder"></i> Pasta de Origem (Vídeos e Legendas SRT)
+              </label>
+              <div class="input-with-button">
+                <input type="text" id="sourceDir" placeholder="Ex: C:\MeusVideos ou X:\Downloads\Filmes" autocomplete="off">
+                <button type="button" class="btn btn-secondary" id="btnValidateSource" title="Validar pasta">
+                  <i class="fa-solid fa-check"></i> Validar
+                </button>
+              </div>
+              <small class="field-hint" id="sourceHint">Cole o caminho completo da pasta que contém os arquivos de vídeo e legendas SRT.</small>
+            </div>
+
+            <div class="form-group">
+              <label for="destDir">
+                <i class="fa-solid fa-folder-minus"></i> Pasta de Destino (Saída MKV)
+              </label>
+              <div class="input-with-button">
+                <input type="text" id="destDir" placeholder="Ex: C:\MeusVideos\MKV_Output" autocomplete="off">
+                <button type="button" class="btn btn-secondary" id="btnValidateDest" title="Validar pasta">
+                  <i class="fa-solid fa-check"></i> Validar
+                </button>
+              </div>
+              <small class="field-hint" id="destHint">Onde os arquivos .mkv gerados serão salvos.</small>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Cartão de Importação de Arquivos (Modo Importar Arquivos) -->
+        <div class="card glass-card hidden" id="filesConfigPanel">
+          <div class="card-header">
+            <h2><i class="fa-solid fa-cloud-arrow-up"></i> Importar Arquivos de Vídeo e Legendas SRT</h2>
+          </div>
+          <div class="card-body">
+
+            <div class="drop-zone" id="dropZone">
+              <i class="fa-solid fa-file-video drop-icon"></i>
+              <p>Arraste e solte seus vídeos (.mp4, .avi...) e legendas (.srt) aqui</p>
+              <span>ou</span>
+              <label for="fileUploadInput" class="btn btn-secondary btn-sm">
+                <i class="fa-solid fa-folder-open"></i> Selecionar Arquivos
+              </label>
+              <input type="file" id="fileUploadInput" multiple accept="video/*,.srt,.SRT" class="hidden-input">
+            </div>
+
+            <small class="field-hint">Selecione um ou mais arquivos de vídeo e suas respectivas legendas SRT simultaneamente.</small>
+
+          </div>
+        </div>
+
+        <!-- Configurações Globais (Codificação de Legenda) -->
+        <div class="card glass-card">
+          <div class="card-header">
+            <h2><i class="fa-solid fa-font"></i> Configurações da Legenda no MKV</h2>
+          </div>
+          <div class="card-body">
+
+            <div class="form-group">
+              <label for="subtitleEncodingSelect">
+                <i class="fa-solid fa-language"></i> Codificação da Legenda no FFmpeg (-sub_charenc)
+              </label>
+              <div class="select-wrapper">
+                <select id="subtitleEncodingSelect" class="form-select">
+                  <option value="AUTO" selected>✨ Auto-detectar (Recomendado)</option>
+                  <option value="WINDOWS-1252">WINDOWS-1252 / CP1252 (Legendas em Português/ANSI)</option>
+                  <option value="ISO-8859-1">ISO-8859-1 (Latin-1 Ocidental)</option>
+                  <option value="UTF-8">UTF-8 (Sem acentuação embutida ANSI)</option>
+                  <option value="UTF-16LE">UTF-16 LE (Unicode 16-bit Little Endian)</option>
+                  <option value="CP850">CP850 (MS-DOS Latin-1)</option>
+                </select>
+              </div>
+              <small class="field-hint">Ajusta o parâmetro -sub_charenc no FFmpeg ao ler os arquivos .srt de entrada se ocorrer erro de decodificação.</small>
+            </div>
+
+            <div class="action-bar">
+              <button type="button" class="btn btn-primary" id="btnScan">
+                <i class="fa-solid fa-magnifying-glass"></i> Analisar Arquivos
+              </button>
+              <button type="button" class="btn btn-success" id="btnConvert" disabled>
+                <i class="fa-solid fa-play"></i> Iniciar Conversão MKV
+              </button>
+              <button type="button" class="btn btn-danger" id="btnCancel" disabled>
+                <i class="fa-solid fa-stop"></i> Cancelar
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Cartão de Arquivos Detectados -->
+        <div class="card glass-card file-list-card">
+          <div class="card-header flex-between">
+            <h2><i class="fa-solid fa-list-check"></i> Arquivos Detectados (<span id="fileCount">0</span>)</h2>
+            <div class="select-actions">
+              <button id="btnSelectAll" class="btn-text">Selecionar Todos</button>
+              <button id="btnDeselectAll" class="btn-text">Desmarcar Todos</button>
+            </div>
+          </div>
+          <div class="card-body">
+
+            <div id="fileListContainer" class="file-list-container">
+              <div class="empty-state">
+                <i class="fa-solid fa-file-video"></i>
+                <p>Indique as pastas ou importe os arquivos acima e clique em <strong>Analisar Arquivos</strong>.</p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Cartão de Downloads Gerados (Modo Importar Arquivos) -->
+        <div class="card glass-card download-card hidden" id="downloadCard">
+          <div class="card-header flex-between">
+            <h2><i class="fa-solid fa-circle-check"></i> Arquivos MKV Gerados para Download</h2>
+            <a href="#" id="btnDownloadZip" class="btn btn-success btn-sm">
+              <i class="fa-solid fa-file-zipper"></i> Baixar Todos (.ZIP)
+            </a>
+          </div>
+          <div class="card-body">
+
+            <div id="downloadListContainer" class="download-list-container">
+              <!-- Lista de downloads gerados dinamicamente -->
+            </div>
+
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Coluna Direita: Progresso e Terminal de Logs em Tempo Real -->
+      <section class="right-panel">
+
+        <!-- Cartão de Progresso do Lote -->
+        <div class="card glass-card progress-card" id="progressCard">
+          <div class="card-header">
+            <h2><i class="fa-solid fa-spinner fa-spin-pulse"></i> Progresso do Processamento</h2>
+            <span class="percent-badge" id="overallPercentText">0%</span>
+          </div>
+          <div class="card-body">
+
+            <div class="progress-info">
+              <span id="currentProcessingItem">Nenhum processamento ativo</span>
+              <span id="progressStepText">0 / 0 concluídos</span>
+            </div>
+
+            <!-- Barra de Progresso Geral -->
+            <div class="progress-bar-wrapper">
+              <div class="progress-bar-fill" id="overallProgressBar" style="width: 0%;"></div>
+            </div>
+
+            <!-- Barra de Progresso do Arquivo Atual -->
+            <div class="sub-progress">
+              <div class="progress-bar-wrapper mini">
+                <div class="progress-bar-fill mini" id="itemProgressBar" style="width: 0%;"></div>
+              </div>
+              <span class="mini-percent" id="itemPercentText">0% (arquivo atual)</span>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Terminal de Logs em Tempo Real -->
+        <div class="card glass-card terminal-card">
+          <div class="card-header flex-between">
+            <h2><i class="fa-solid fa-terminal"></i> Terminal de Processamento em Tempo Real</h2>
+            <div class="terminal-actions">
+              <label class="toggle-autoscroll">
+                <input type="checkbox" id="chkAutoScroll" checked> Auto-scroll
+              </label>
+              <button class="btn-icon" id="btnClearLogs" title="Limpar Logs"><i class="fa-solid fa-trash-can"></i></button>
+              <button class="btn-icon" id="btnCopyLogs" title="Copiar Logs"><i class="fa-regular fa-copy"></i></button>
+            </div>
+          </div>
+          <div class="card-body terminal-body">
+            <div class="terminal-console" id="logConsole">
+              <div class="log-line info">
+                <span class="timestamp">[12:00:00]</span>
+                <span class="badge badge-info">SISTEMA</span>
+                <span class="text">Pronto para iniciar. As mensagens de log do FFmpeg e detecção de idioma aparecerão aqui em tempo real.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+    </main>
+
+    <!-- Rodapé -->
+    <footer class="app-footer">
+      <p>MKV Studio Converter &copy; 2026 - Desenvolvido com Node.js, Express & FFmpeg</p>
+    </footer>
+
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+1
+00:00:01,000 --> 00:00:03,000
+Olá, este é um teste de legenda em português para verificar a detecção automática do idioma pelo conteúdo das frases.
+
+2
+00:00:03,100 --> 00:00:04,000
+Tudo está funcionando com perfeição e velocidade incrível.
