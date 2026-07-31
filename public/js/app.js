@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const fileUploadInput = document.getElementById('fileUploadInput');
 
   // Elementos - Configurações Globais & Ações
+  const hardwareAccelSelect = document.getElementById('hardwareAccelSelect');
   const subtitleEncodingSelect = document.getElementById('subtitleEncodingSelect');
   const btnScan = document.getElementById('btnScan');
   const btnConvert = document.getElementById('btnConvert');
@@ -211,6 +212,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const forcedEncoding = subtitleEncodingSelect.value;
+    const accelerator = hardwareAccelSelect ? hardwareAccelSelect.value : 'CPU';
     const checkboxes = fileListContainer.querySelectorAll('.item-checkbox:checked');
     const selectedIds = Array.from(checkboxes).map(cb => cb.dataset.itemId);
 
@@ -241,6 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
           selectedItemIds: selectedIds,
           itemsConfig,
           forcedEncoding,
+          accelerator,
           sessionId: currentSessionId
         })
       });
@@ -410,12 +413,10 @@ document.addEventListener('DOMContentLoaded', () => {
       siblingSelects.forEach((otherSelect) => {
         if (otherSelect !== selectEl) {
           const otherIdx = parseInt(otherSelect.dataset.subIndex, 10);
-          if (otherSelect.value === 'burn') {
-            otherSelect.value = 'selectable';
-            otherSelect.setAttribute('data-mode', 'selectable');
-            if (item.subtitles[otherIdx]) {
-              item.subtitles[otherIdx].mode = 'selectable';
-            }
+          otherSelect.value = 'none';
+          otherSelect.setAttribute('data-mode', 'none');
+          if (item.subtitles[otherIdx]) {
+            item.subtitles[otherIdx].mode = 'none';
           }
         }
       });

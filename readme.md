@@ -23,6 +23,7 @@ O **MKV Studio Converter** é uma aplicação web completa, moderna e de alto de
 - [🔍 Detecção de Idioma e Encoding](#-detecção-de-idioma-e-encoding)
 - [🔌 Referência da API REST & SSE](#-referência-da-api-rest--sse)
 - [❓ Solução de Problemas (Troubleshooting)](#-solução-de-problemas-troubleshooting)
+- [📝 Changelog](#-changelog)
 
 ---
 
@@ -189,6 +190,15 @@ O módulo [`languageDetector.js`](file:///f:/developerenv/mkv_studio/lib/languag
 #### 3. Falha ao gerar arquivo ZIP no Modo Importar
 - **Solução (Windows)**: Certifique-se de que o PowerShell está habilitado e permite a execução de comandos nativos (`Compress-Archive`).
 - **Solução (Linux/macOS)**: Instale o utilitário `zip` (`sudo apt install zip` ou `brew install zip`).
+
+---
+
+## 📝 Changelog
+
+### Versão 1.1.0
+- 🎬 **Exclusividade de Queima de Legenda (Burn-in)**: Ao selecionar a opção `burn` em qualquer faixa de legenda de um vídeo, todas as demais legendas desse mesmo vídeo são ajustadas automaticamente para `none`.
+- ⚡ **Seleção de Acelerador de Hardware**: Adicionada opção no painel de configurações para o usuário escolher o acelerador de vídeo utilizado pelo FFmpeg (`CPU / libx264`, `NVIDIA NVENC`, `Intel QuickSync`, `AMD AMF`, `Linux VAAPI`, `Apple VideoToolbox`).
+- 📦 **Atualização de Versão**: Atualizado o número de versão no [`package.json`](file:///f:/developerenv/mkv_studio/package.json) para `1.1.0`.
 
 ---
 

@@ -273,7 +273,7 @@ const server = http.createServer(async (req, res) => {
 
     try {
       const body = await parseRequestBody(req);
-      const { sourceDir, destDir, selectedItemIds, itemsConfig, forcedEncoding, sessionId } = body;
+      const { sourceDir, destDir, selectedItemIds, itemsConfig, forcedEncoding, accelerator, sessionId } = body;
 
       const scanResult = scanDirectory(sourceDir, destDir);
       let itemsToProcess = scanResult.items;
@@ -339,6 +339,7 @@ const server = http.createServer(async (req, res) => {
             await activeJob.worker.convertItem(
               item,
               forcedEncoding || 'AUTO',
+              accelerator || 'CPU',
               (type, msg) => broadcastLog(type, msg),
               (percent) => {
                 if (activeJob.cancelled) return;

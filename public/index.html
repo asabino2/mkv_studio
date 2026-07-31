@@ -112,12 +112,29 @@
           </div>
         </div>
 
-        <!-- Configurações Globais (Codificação de Legenda) -->
+        <!-- Configurações Globais (Codificação de Legenda & Aceleração) -->
         <div class="card glass-card">
           <div class="card-header">
-            <h2><i class="fa-solid fa-font"></i> Configurações da Legenda no MKV</h2>
+            <h2><i class="fa-solid fa-sliders"></i> Configurações de Legenda e Transcodificação</h2>
           </div>
           <div class="card-body">
+
+            <div class="form-group">
+              <label for="hardwareAccelSelect">
+                <i class="fa-solid fa-microchip"></i> Acelerador de Hardware (GPU / CPU)
+              </label>
+              <div class="select-wrapper">
+                <select id="hardwareAccelSelect" class="form-select">
+                  <option value="CPU" selected>💻 CPU (Software - libx264)</option>
+                  <option value="NVIDIA">🟢 NVIDIA NVENC (h264_nvenc)</option>
+                  <option value="INTEL">🔵 Intel QuickSync (h264_qsv)</option>
+                  <option value="AMD">🔴 AMD AMF (h264_amf)</option>
+                  <option value="VAAPI">🐧 Linux VAAPI (h264_vaapi)</option>
+                  <option value="VIDEOTOOLBOX">🍏 Apple VideoToolbox (h264_videotoolbox)</option>
+                </select>
+              </div>
+              <small class="field-hint">Acelerador de hardware utilizado para a codificação de vídeo (usado ao queimar legenda).</small>
+            </div>
 
             <div class="form-group">
               <label for="subtitleEncodingSelect">
