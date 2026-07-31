@@ -105,7 +105,16 @@ mkv_studio/
    ```
 
 3. **Iniciar o servidor**:
-   - **Via Node.js**:
+   - **Via Docker Compose (Recomendado - Alpine Linux leve com FFmpeg integrado)**:
+     ```bash
+     docker compose up -d --build
+     ```
+   - **Via Docker CLI**:
+     ```bash
+     docker build -t mkv-studio .
+     docker run -d -p 3000:3000 --name mkv_studio mkv-studio
+     ```
+   - **Via Node.js (Local)**:
      ```bash
      npm start
      ```

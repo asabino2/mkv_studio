@@ -1,0 +1,21 @@
+services:
+  mkv-studio:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mkv_studio
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+    volumes:
+      # Volume para armazenamento temporário de uploads e geração de ZIPs
+      - temp_storage_data:/app/temp_storage
+      # Mapeamento para indicar diretórios locais de mídia (origem e destino)
+      # Altere os caminhos à esquerda (ex: /caminho/local/videos) conforme sua preferência
+      - ./media/source:/app/media/source
+      - ./media/dest:/app/media/dest
+
+volumes:
+  temp_storage_data:

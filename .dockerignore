@@ -1,0 +1,9 @@
+node_modules
+npm-debug.log
+temp_storage
+test_data
+.git
+.gitignore
+._DAV
+Dockerfile
+docker-compose.yml
