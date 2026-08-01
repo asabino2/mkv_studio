@@ -76,7 +76,7 @@ function parseRequestBody(req) {
       try {
         resolve(JSON.parse(body));
       } catch (err) {
-        reject(new Error('JSON inválido no corpo da requisição.'));
+        reject(new Error('Invalid JSON in request body.'));
       }
     });
     req.on('error', err => reject(err));
@@ -90,7 +90,7 @@ function parseMultipartForm(req, saveDir) {
   return new Promise((resolve, reject) => {
     const contentType = req.headers['content-type'] || '';
     const match = contentType.match(/boundary=(?:"([^"]+)"|([^;]+))/i);
-    if (!match) return reject(new Error('Content-Type não é multipart/form-data ou boundary não encontrado.'));
+    if (!match) return reject(new Error('Content-Type is not multipart/form-data or boundary not found.'));
 
     const boundaryStr = '--' + (match[1] || match[2]).trim();
     const boundary = Buffer.from(boundaryStr);
@@ -126,9 +126,9 @@ function parseMultipartForm(req, saveDir) {
                   const uploadedHash = crypto.createHash('sha256').update(bodyBuffer).digest('hex');
 
                   if (existingHash === uploadedHash) {
-                    broadcastLog('info', `[Checksum Match] O arquivo "${filename}" já existe na pasta input e é idêntico. Mantido sem sobrescrever.`);
+                    broadcastLog('info', `[Checksum Match] File "${filename}" already exists in input folder and is identical. Kept without overwriting.`);
                   } else {
-                    broadcastLog('info', `[Checksum Mismatch] O arquivo "${filename}" já existe na pasta input, mas com conteúdo diferente. Atualizando arquivo...`);
+                    broadcastLog('info', `[Checksum Mismatch] File "${filename}" already exists in input folder, but content differs. Updating file...`);
                     fs.writeFileSync(savePath, bodyBuffer);
                   }
                 } else {
@@ -209,23 +209,23 @@ const server = http.createServer(async (req, res) => {
 
       if (!pathDir || typeof pathDir !== 'string') {
         res.writeHead(400, { 'Content-Type': 'application/json' });
-        return res.end(JSON.stringify({ valid: false, message: 'Caminho não fornecido.' }));
+        return res.end(JSON.stringify({ valid: false, message: 'Path not provided.' }));
       }
 
       const exists = fs.existsSync(pathDir);
       if (!exists) {
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        return res.end(JSON.stringify({ valid: false, message: 'O caminho especificado não existe.' }));
+        return res.end(JSON.stringify({ valid: false, message: 'Specified path does not exist.' }));
       }
 
       const stat = fs.statSync(pathDir);
       if (!stat.isDirectory()) {
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        return res.end(JSON.stringify({ valid: false, message: 'O caminho especificado não é uma pasta.' }));
+        return res.end(JSON.stringify({ valid: false, message: 'Specified path is not a directory.' }));
       }
 
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      return res.end(JSON.stringify({ valid: true, message: 'Pasta válida encontrada.' }));
+      return res.end(JSON.stringify({ valid: true, message: 'Valid directory found.' }));
 
     } catch (err) {
       res.writeHead(500, { 'Content-Type': 'application/json' });
@@ -241,17 +241,17 @@ const server = http.createServer(async (req, res) => {
 
       if (!sourceDir || !destDir) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
-        return res.end(JSON.stringify({ error: 'As pastas de origem e destino são obrigatórias.' }));
+        return res.end(JSON.stringify({ error: 'Source and destination folders are required.' }));
       }
 
       const result = scanDirectory(sourceDir, destDir);
       const encText = (forcedEncoding && forcedEncoding !== 'AUTO') ? ` [Encoding: ${forcedEncoding}]` : ' [Encoding Auto]';
-      broadcastLog('info', `Varredura realizada em "${sourceDir}". ${result.totalVideos} vídeo(s) encontrado(s)${encText}.`);
+      broadcastLog('info', `Scan completed in "${sourceDir}". ${result.totalVideos} video(s) found${encText}.`);
 
       res.writeHead(200, { 'Content-Type': 'application/json' });
       return res.end(JSON.stringify(result));
     } catch (err) {
-      broadcastLog('error', `Erro na varredura: ${err.message}`);
+      broadcastLog('error', `Scan error: ${err.message}`);
       res.writeHead(500, { 'Content-Type': 'application/json' });
       return res.end(JSON.stringify({ error: err.message }));
     }
@@ -265,7 +265,7 @@ const server = http.createServer(async (req, res) => {
       const sessionDestDir = OUTPUT_DIR;
 
       const count = await parseMultipartForm(req, sessionSourceDir);
-      broadcastLog('info', `Upload de ${count} arquivo(s) concluído para a pasta "input". Analisando arquivos...`);
+      broadcastLog('info', `Upload of ${count} file(s) completed to "input" folder. Analyzing files...`);
 
       const scanResult = scanDirectory(sessionSourceDir, sessionDestDir);
       res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -279,7 +279,7 @@ const server = http.createServer(async (req, res) => {
 
     } catch (err) {
       res.writeHead(500, { 'Content-Type': 'application/json' });
-      return res.end(JSON.stringify({ error: `Erro no upload: ${err.message}` }));
+      return res.end(JSON.stringify({ error: `Upload error: ${err.message}` }));
     }
   }
 
@@ -287,7 +287,7 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'POST' && pathname === '/api/convert') {
     if (activeJob.running) {
       res.writeHead(409, { 'Content-Type': 'application/json' });
-      return res.end(JSON.stringify({ error: 'Já existe uma conversão em andamento.' }));
+      return res.end(JSON.stringify({ error: 'A conversion job is already running.' }));
     }
 
     try {
@@ -333,7 +333,7 @@ const server = http.createServer(async (req, res) => {
 
       if (itemsToProcess.length === 0) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
-        return res.end(JSON.stringify({ error: 'Nenhum vídeo selecionado para conversão.' }));
+        return res.end(JSON.stringify({ error: 'No videos selected for conversion.' }));
       }
 
       activeJob = {
@@ -345,20 +345,20 @@ const server = http.createServer(async (req, res) => {
       };
 
       broadcastSSE('job_start', { totalItems: itemsToProcess.length });
-      broadcastLog('info', `========== INICIANDO LOTE DE CONVERSÃO (${itemsToProcess.length} ARQUIVOS) ==========`);
+      broadcastLog('info', `========== STARTING CONVERSION BATCH (${itemsToProcess.length} FILES) ==========`);
 
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ message: 'Processamento iniciado.', totalItems: itemsToProcess.length }));
+      res.end(JSON.stringify({ message: 'Processing started.', totalItems: itemsToProcess.length }));
 
       (async () => {
         for (let i = 0; i < itemsToProcess.length; i++) {
           if (activeJob.cancelled) {
-            broadcastLog('warning', 'Processamento em lote interrompido pelo usuário.');
+            broadcastLog('warning', 'Batch processing canceled by user.');
             break;
           }
 
           const item = itemsToProcess[i];
-          broadcastLog('info', `[${i + 1}/${itemsToProcess.length}] Processando: ${item.videoName}`);
+          broadcastLog('info', `[${i + 1}/${itemsToProcess.length}] Processing: ${item.videoName}`);
 
           broadcastProgress({
             currentIndex: i + 1,
@@ -391,15 +391,15 @@ const server = http.createServer(async (req, res) => {
             }
           } catch (err) {
             if (activeJob.cancelled) {
-              broadcastLog('warning', `Conversão do vídeo ${item.videoName} foi cancelada.`);
+              broadcastLog('warning', `Conversion of video ${item.videoName} was canceled.`);
             } else {
-              broadcastLog('error', `Falha ao converter ${item.videoName}: ${err.message}`);
+              broadcastLog('error', `Failed to convert ${item.videoName}: ${err.message}`);
             }
           }
         }
 
-        const finalStatus = activeJob.cancelled ? 'CANCELADO' : 'CONCLUÍDO';
-        broadcastLog('info', `========== FIM DO PROCESSAMENTO: ${finalStatus} (${activeJob.completedItems}/${itemsToProcess.length} convertidos) ==========`);
+        const finalStatus = activeJob.cancelled ? 'CANCELED' : 'COMPLETED';
+        broadcastLog('info', `========== END OF PROCESSING: ${finalStatus} (${activeJob.completedItems}/${itemsToProcess.length} converted) ==========`);
 
         const generatedMkvFiles = itemsToProcess.map(item => item.destName);
 
@@ -419,7 +419,7 @@ const server = http.createServer(async (req, res) => {
 
     } catch (err) {
       activeJob.running = false;
-      broadcastLog('error', `Erro ao iniciar conversão: ${err.message}`);
+      broadcastLog('error', `Error starting conversion: ${err.message}`);
       res.writeHead(500, { 'Content-Type': 'application/json' });
       return res.end(JSON.stringify({ error: err.message }));
     }
@@ -432,7 +432,7 @@ const server = http.createServer(async (req, res) => {
 
     if (!filename) {
       res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
-      return res.end('Parâmetros de download inválidos.');
+      return res.end('Invalid download parameters.');
     }
 
     let filePath = path.join(OUTPUT_DIR, filename);
@@ -442,7 +442,7 @@ const server = http.createServer(async (req, res) => {
 
     if (!fs.existsSync(filePath)) {
       res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-      return res.end('Arquivo não encontrado.');
+      return res.end('File not found.');
     }
 
     const stat = fs.statSync(filePath);
@@ -458,7 +458,7 @@ const server = http.createServer(async (req, res) => {
   // 7. Rota: /api/download/zip (Download de Todos os MKVs em ZIP)
   if (req.method === 'GET' && pathname === '/api/download/zip') {
     const sessionId = url.searchParams.get('sessionId') || 'output_batch';
-    const zipName = `MKV_Convertidos_${Date.now()}.zip`;
+    const zipName = `Converted_MKV_${Date.now()}.zip`;
 
     let destDir = OUTPUT_DIR;
     let zipPath = path.join(OUTPUT_DIR, zipName);
@@ -484,7 +484,7 @@ const server = http.createServer(async (req, res) => {
       return;
     } catch (err) {
       res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
-      return res.end(`Erro ao gerar arquivo ZIP: ${err.message}`);
+      return res.end(`Error generating ZIP file: ${err.message}`);
     }
   }
 
@@ -492,15 +492,15 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'POST' && pathname === '/api/cancel') {
     if (!activeJob.running || !activeJob.worker) {
       res.writeHead(400, { 'Content-Type': 'application/json' });
-      return res.end(JSON.stringify({ error: 'Nenhum processamento ativo para cancelar.' }));
+      return res.end(JSON.stringify({ error: 'No active processing to cancel.' }));
     }
 
     activeJob.cancelled = true;
     activeJob.worker.cancel();
-    broadcastLog('warning', 'Cancelamento enviado pelo usuário...');
+    broadcastLog('warning', 'Cancellation request sent by user...');
 
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    return res.end(JSON.stringify({ message: 'Processamento cancelado.' }));
+    return res.end(JSON.stringify({ message: 'Processing canceled.' }));
   }
 
   // 9. Servir arquivos estáticos
@@ -514,5 +514,5 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`Servidor MKV Studio rodando em http://localhost:${PORT}`);
+  console.log(`MKV Studio server running at http://localhost:${PORT}`);
 });

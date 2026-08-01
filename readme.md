@@ -1,113 +1,116 @@
 # 🎬 MKV Studio Converter
 
-> **Multiplexador Inteligente de Vídeo e Legendas SRT com Suporte a Pastas Locais, Upload Drag & Drop e Download ZIP em Lote.**
+> **Intelligent Video, Audio, and SRT Subtitle Multiplexer with Local Folder Support, Drag & Drop Upload, and Batch ZIP Download.**
 
 [![Node.js](https://img.shields.io/badge/Node.js-v14%2B-green.svg)](https://nodejs.org/)
 [![FFmpeg](https://img.shields.io/badge/FFmpeg-Required-red.svg)](https://ffmpeg.org/)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](#licença)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](#license)
 
-O **MKV Studio Converter** é uma aplicação web completa, moderna e de alto desempenho desenvolvida para converter vídeos (MP4, AVI, MOV, WMV, WEBM, FLV, M4V, TS, M2TS, 3GP, MKV) e embutir legendas `.srt` em arquivos no formato contêiner **MKV (Matroska)**.
+**MKV Studio Converter** is a complete, modern, high-performance web application designed to convert videos (MP4, AVI, MOV, WMV, WEBM, FLV, M4V, TS, M2TS, 3GP, MKV) and multiplex `.srt` subtitles and external audio tracks into **MKV (Matroska)** container files.
 
 ---
 
-## 📋 Sumário
+## 📋 Table of Contents
 
-- [Visão Geral](#-visão-geral)
-- [✨ Principais Recursos](#-principais-recursos)
-- [🛠️ Arquitetura do Projeto](#️-arquitetura-do-projeto)
-- [📦 Requisitos do Sistema](#-requisitos-do-sistema)
-- [🚀 Como Instalar e Executar](#-como-instalar-e-executar)
-- [📖 Guia de Uso](#-guia-de-uso)
-  - [Modo 1: Modo Pasta (Sistema Local)](#modo-1-modo-pasta-sistema-local)
-  - [Modo 2: Modo Importar Arquivos (Upload & ZIP)](#modo-2-modo-importar-arquivos-upload--zip)
-- [🔍 Detecção de Idioma e Encoding](#-detecção-de-idioma-e-encoding)
-- [🔌 Referência da API REST & SSE](#-referência-da-api-rest--sse)
-- [❓ Solução de Problemas (Troubleshooting)](#-solução-de-problemas-troubleshooting)
+- [Overview](#-overview)
+- [✨ Key Features](#-key-features)
+- [🛠️ Project Architecture](#️-project-architecture)
+- [📦 System Requirements](#-system-requirements)
+- [🚀 Installation & Setup](#-installation--setup)
+- [📖 Usage Guide](#-usage-guide)
+  - [Mode 1: Folder Mode (Local System)](#mode-1-folder-mode-local-system)
+  - [Mode 2: Import Files Mode (Upload & ZIP)](#mode-2-import-files-mode-upload--zip)
+- [🔍 Language and Encoding Detection](#-language-and-encoding-detection)
+- [🔌 REST API & SSE Reference](#-rest-api--sse-reference)
+- [❓ Troubleshooting](#-troubleshooting)
 - [📝 Changelog](#-changelog)
 
 ---
 
-## 🌐 Visão Geral
+## 🌐 Overview
 
-O MKV Studio Converter foi criado para simplificar o fluxo de trabalho de multiplexação de mídia. Ele oferece duas abordagens de trabalho integradas:
-1. **Modo Pasta**: Operação direta em diretórios locais do sistema operacional (ideal para processar grandes bibliotecas de mídia sem mover arquivos).
-2. **Modo Importar Arquivos**: Upload por *drag & drop* através do navegador com geração automática de pacotes `.ZIP` para download individual ou em lote.
+MKV Studio Converter was created to streamline media multiplexing workflows. It provides two integrated operating modes:
+1. **Folder Mode**: Direct operation on local directories of the host system (ideal for processing large local media libraries without moving files).
+2. **Import Files Mode**: Browser *drag & drop* upload saving files into an `input/` folder with automatic `.ZIP` package generation in `output/` for single or batch download.
 
-A aplicação inclui detecção inteligente de idioma e codificação de legenda, embutimento sem perda de qualidade visual (*stream copy*) e terminal interativo em tempo real via Server-Sent Events (SSE).
-
----
-
-## ✨ Principais Recursos
-
-- **Multiplexação Ultra Rápida (Soft Subtitles)**: Embutimento de legendas SRT como faixas ativáveis/desativáveis no contêiner MKV sem re-encodificar o vídeo (`-c:v copy`).
-- **Queima de Legendas no Vídeo (Hard Subtitles / Burn-in)**: Opção para renderizar legendas diretamente nos *frames* do vídeo utilizando o codec H.264 (`libx264`, `-preset medium`, `-crf 23`).
-- **Detecção Inteligente de Idioma (ISO-639-1 / ISO-639-2)**:
-  - Análise por nome do arquivo (ex: `filme.pt-br.srt`, `movie.en.srt`).
-  - Análise linguística por *stopwords* (Português, Inglês, Espanhol, Francês, Alemão e Italiano) caso o nome não indique o idioma.
-  - Inserção automática de metadados de idioma no contêiner MKV (`language=por`, `title=Português`).
-- **Detecção Automática de Encoding de Legenda**:
-  - Validação estrita conforme **RFC 3629** para UTF-8.
-  - Suporte a UTF-8 BOM, UTF-16 LE/BE e CP1252/Windows-1252 (evitando erros de acentuação).
-  - Opção para forçar codificação globalmente (`WINDOWS-1252`, `ISO-8859-1`, `UTF-8`, etc.).
-- **Terminal de Logs e Progresso em Tempo Real (SSE)**:
-  - Acompanhamento de porcentagem por arquivo e progresso geral do lote.
-  - Exibição em tempo real de comandos FFmpeg, avisos, logs de sistema e erros.
-  - Recursos de auto-scroll, limpeza e cópia rápida de logs.
-- **Cancelamento Seguro**: Interrupção limpa de processos em segundo plano com encerramento de subprocessos do FFmpeg.
+The application includes intelligent language detection for subtitles and audio, encoding auto-detection, lossless video stream copying (`-c:v copy`), and a real-time interactive log terminal powered by Server-Sent Events (SSE).
 
 ---
 
-## 🛠️ Arquitetura do Projeto
+## ✨ Key Features
+
+- **Ultra-Fast Multiplexing (Soft Subtitles & Audios)**: Embed SRT subtitles and external audio tracks as selectable streams into MKV containers without re-encoding video (`-c:v copy`).
+- **Subtitle Burn-in (Hard Subtitles)**: Option to render subtitles directly into video frames using H.264 video encoding (`libx264`, `-preset medium`, `-crf 23`).
+- **Audio Multiplexing**: Support for external audio files (`.mp3`, `.m4a`, `.aac`, `.flac`, `.wav`, `.ogg`, `.ac3`, `.opus`, `.wma`) with language detection.
+- **Intelligent Language Detection (ISO-639-1 / ISO-639-2)**:
+  - Filename pattern analysis (e.g., `movie.pt-br.srt`, `movie.en.mp3`).
+  - Text stopword analysis (Portuguese, English, Spanish, French, German, Italian) when subtitle filename does not indicate language.
+  - Automatic language metadata embedding into MKV stream tags (`language=eng`, `title=English`).
+- **Automatic Subtitle Encoding Detection**:
+  - Strict validation per **RFC 3629** for UTF-8.
+  - Support for UTF-8 BOM, UTF-16 LE/BE, and CP1252/Windows-1252.
+  - Option to override encoding globally (`WINDOWS-1252`, `ISO-8859-1`, `UTF-8`, etc.).
+- **Checksum Duplicate Check (SHA-256)**: When importing files, verifies filename and SHA-256 hash to prevent unnecessary file overwrites in `input/`.
+- **Upload Progress Bar**: Real-time progress percentage tracking for file uploads in Import Mode.
+- **Real-Time Logs & Progress Terminal (SSE)**:
+  - Individual item percentage and overall batch progress tracking.
+  - Real-time display of FFmpeg commands, warnings, system logs, and errors.
+  - Terminal features for auto-scroll, log clearing, and quick log copying.
+- **Safe Cancellation**: Graceful background process cancellation with immediate cleanup of spawned FFmpeg child processes.
+
+---
+
+## 🛠️ Project Architecture
 
 ```text
 mkv_studio/
-├── input/                    # Subpasta para arquivos importados via upload
-├── output/                   # Subpasta para arquivos MKV convertidos gerados
+├── input/                    # Subfolder for imported uploaded files
+├── output/                   # Subfolder for generated converted MKV files
 ├── lib/
-│   ├── ffmpegRunner.js       # Gerenciador de processos FFmpeg (spawn, progresso e cancelamento)
-│   ├── languageDetector.js   # Validador RFC 3629 (UTF-8/UTF-16/CP1252) e reconhecedor de idiomas
-│   ├── mkvZipHelper.js       # Gerador de pacotes ZIP (PowerShell / zip CLI)
-│   └── scanner.js            # Escaneamento de pastas e pareamento de vídeos, áudios e legendas
+│   ├── ffmpegRunner.js       # FFmpeg process worker (spawn, progress, cancellation)
+│   ├── languageDetector.js   # RFC 3629 validator (UTF-8/UTF-16/CP1252) and language detector
+│   ├── mkvZipHelper.js       # ZIP archive helper (PowerShell / zip CLI)
+│   └── scanner.js            # Directory scanner & video/audio/subtitle matcher
 ├── public/
 │   ├── css/
-│   │   └── styles.css        # Design System glassmorphic escuro moderno
+│   │   └── styles.css        # Modern dark glassmorphic Design System
 │   ├── js/
-│   │   └── app.js            # Lógica do frontend, gerenciamento de abas e consumo de SSE
-│   └── index.html            # Interface de usuário principal
-├── temp_storage/             # Armazenamento temporário auxiliar
-├── test_data/                # Arquivos de teste e dados de amostra
-├── package.json              # Configurações e dependências do Node.js
-├── server.js                 # Servidor HTTP nativo com API REST e Server-Sent Events (SSE)
-├── start_server.bat          # Atalho para inicialização rápida no Windows
-└── readme.md                 # Documentação técnica do projeto
+│   │   └── app.js            # Frontend logic, tab control, and SSE event handlers
+│   └── index.html            # Main User Interface
+├── temp_storage/             # Auxiliary temporary storage
+├── test_data/                # Sample test data
+├── package.json              # Node.js project manifest & dependencies
+├── server.js                 # HTTP server with REST API and Server-Sent Events (SSE)
+├── start_server.bat          # Windows shortcut launcher script
+└── readme.md                 # Project technical documentation
 ```
 
 ---
 
-## 📦 Requisitos do Sistema
+## 📦 System Requirements
 
-- **Node.js**: Versão 14.0 ou superior.
-- **FFmpeg**: É **obrigatório** ter o `ffmpeg` instalado no sistema e acessível nas variáveis de ambiente (`PATH`).
-  - Para verificar se está instalado, execute no terminal: `ffmpeg -version`
-- **PowerShell (Windows)** ou **zip CLI (Linux/macOS)**: Utilizados pelo módulo `mkvZipHelper.js` para compactar os arquivos de download em ZIP.
+- **Node.js**: Version 14.0 or higher.
+- **FFmpeg**: **Required**. `ffmpeg` must be installed on the host system and available in system `PATH`.
+  - To check installation, run: `ffmpeg -version`
+- **PowerShell (Windows)** or **zip CLI (Linux/macOS)**: Used by `mkvZipHelper.js` to compress converted MKV files into a `.ZIP` download package.
 
 ---
 
-## 🚀 Como Instalar e Executar
+## 🚀 Installation & Setup
 
-1. **Clonar ou baixar o repositório**:
+1. **Clone or download the repository**:
    ```bash
-   git clone <URL_DO_REPOSITORIO>
+   git clone <REPOSITORY_URL>
    cd mkv_studio
    ```
 
-2. **Instalar as dependências do Node.js**:
+2. **Install Node.js dependencies**:
    ```bash
    npm install
    ```
 
-3. **Iniciar o servidor**:
-   - **Via Docker Compose (Recomendado - Alpine Linux leve com FFmpeg integrado)**:
+3. **Start the server**:
+   - **Via Docker Compose (Recommended - Lightweight Alpine Linux with built-in FFmpeg)**:
      ```bash
      docker compose up -d --build
      ```
@@ -120,110 +123,112 @@ mkv_studio/
      ```bash
      npm start
      ```
-     ou
+     or
      ```bash
      node server.js
      ```
-   - **Via script Batch (Windows)**:
-     Dê um duplo clique no arquivo [`start_server.bat`](file:///f:/developerenv/mkv_studio/start_server.bat).
+   - **Via Windows Batch script**:
+     Double-click [`start_server.bat`](file:///f:/developerenv/mkv_studio/start_server.bat).
 
-4. **Acessar a aplicação**:
-   Abra o navegador e acesse: [http://localhost:3000](http://localhost:3000)
-
----
-
-## 📖 Guia de Uso
-
-### Modo 1: Modo Pasta (Sistema Local)
-
-Utilize este modo se o servidor estiver rodando no mesmo computador ou servidor com acesso ao sistema de arquivos local.
-
-1. Selecione a aba **Modo Pasta (Sistema Local)**.
-2. Informe o caminho da **Pasta de Origem** (onde estão seus vídeos e arquivos `.srt`).
-3. Informe o caminho da **Pasta de Destino** (onde os arquivos `.mkv` serão salvos).
-4. Clique em **Validar** para confirmar se o sistema consegue acessar as pastas.
-5. Clique em **Analisar Arquivos**. O sistema lista todos os vídeos e vincula automaticamente as legendas detectadas.
-6. Ajuste a modalidade de cada legenda (Selecionável ou Queimar no Vídeo).
-7. Clique em **Iniciar Conversão MKV**.
+4. **Access the application**:
+   Open your browser and navigate to: [http://localhost:3000](http://localhost:3000)
 
 ---
 
-### Modo 2: Modo Importar Arquivos (Upload & ZIP)
+## 📖 Usage Guide
 
-Utilize este modo para enviar arquivos via navegador a partir de qualquer dispositivo.
+### Mode 1: Folder Mode (Local System)
 
-1. Selecione a aba **Modo Importar Arquivos (Upload & Download ZIP)**.
-2. Arraste e solte ou clique em **Selecionar Arquivos** para escolher vídeos (`.mp4`, `.avi`, `.mkv`...) e legendas (`.srt`).
-3. O sistema enviará os arquivos para uma sessão temporária e realizará a análise automática.
-4. Clique em **Iniciar Conversão MKV**.
-5. Ao concluir, um painel de downloads será exibido permitindo baixar os arquivos `.mkv` individualmente ou fazer o download de um único arquivo `.ZIP` contendo todo o lote.
+Use this mode if the server is running on the local computer or has access to local filesystem paths.
 
----
-
-## 🔍 Detecção de Idioma e Encoding
-
-O módulo [`languageDetector.js`](file:///f:/developerenv/mkv_studio/lib/languageDetector.js) atua em duas etapas:
-
-1. **Codificação do Arquivo (Encoding)**:
-   - Checa os marcadores BOM: `UTF-8` (`EF BB BF`), `UTF-16 LE` (`FF FE`), `UTF-16 BE` (`FE FF`).
-   - Aplica a função `isStrictUtf8` para validar a conformidade dos bytes segundo o **RFC 3629**.
-   - Se a validação falhar, assume o padrão ocidental `CP1252 / Windows-1252`.
-
-2. **Detecção do Idioma**:
-   - **Nome do Arquivo**: Procura padrões como `.pt-br.srt`, `.pt.srt`, `.por.srt`, `.en.srt`, `.eng.srt`, `.es.srt`, `.spa.srt`, etc.
-   - **Conteúdo (Stopwords)**: Se o nome for genérico (ex: `legenda.srt`), faz a leitura dos primeiros 50.000 bytes, remove marcadores de tempo/tags HTML e calcula pontuações de palavras de parada (*stopwords*) em Português, Inglês, Espanhol, Francês, Alemão e Italiano.
+1. Select **Folder Mode (Local System)**.
+2. Enter the **Source Folder** path (containing your videos, audios, and `.srt` files).
+3. Enter the **Destination Folder** path (where `.mkv` files will be written).
+4. Click **Validate** to verify path accessibility.
+5. Click **Analyze Files**. The system scans the directory and automatically pairs video, audio, and subtitle files.
+6. Configure track modes (Selectable, Burn-in, or None).
+7. Click **Start MKV Conversion**.
 
 ---
 
-## 🔌 Referência da API REST & SSE
+### Mode 2: Import Files Mode (Upload & ZIP)
 
-| Método | Rota | Descrição |
+Use this mode to upload files through the browser interface.
+
+1. Select **Import Files Mode (Upload & Download ZIP)**.
+2. Drag & drop or click **Select Files** to choose videos, audio tracks, and `.srt` subtitles.
+3. The real-time upload progress bar tracks file transfer into the `input/` folder while performing SHA-256 duplicate verification.
+4. Click **Start MKV Conversion**.
+5. Once complete, a download panel appears allowing individual `.mkv` file downloads or a single `.ZIP` archive download containing all output files from `output/`.
+
+---
+
+## 🔍 Language and Encoding Detection
+
+The [`languageDetector.js`](file:///f:/developerenv/mkv_studio/lib/languageDetector.js) module handles detection in two stages:
+
+1. **File Character Encoding**:
+   - Checks BOM markers: `UTF-8` (`EF BB BF`), `UTF-16 LE` (`FF FE`), `UTF-16 BE` (`FE FF`).
+   - Uses `isStrictUtf8` byte validator per **RFC 3629**.
+   - Defaults to `CP1252 / Windows-1252` if UTF-8 validation fails.
+
+2. **Language Detection**:
+   - **Filename Patterns**: Matches suffixes like `.pt-br.srt`, `.por.srt`, `.en.srt`, `.eng.srt`, `.es.srt`, `.spa.srt`, etc.
+   - **Content Analysis (Stopwords)**: If filename is generic, reads the first 50KB of `.srt` text, strips timestamps/HTML tags, and calculates language stopword scores for Portuguese, English, Spanish, French, German, and Italian.
+
+---
+
+## 🔌 REST API & SSE Reference
+
+| Method | Endpoint | Description |
 | :--- | :--- | :--- |
-| `GET` | `/api/events` | **Server-Sent Events (SSE)**. Transmite logs do sistema e atualizações de progresso em tempo real. |
-| `POST` | `/api/validate-path` | Recebe `{ pathDir }` e valida se a pasta existe e é acessível no sistema local. |
-| `POST` | `/api/scan` | Recebe `{ sourceDir, destDir, forcedEncoding }` e escaneia a pasta vinculando vídeos e legendas. |
-| `POST` | `/api/upload-files` | Recebe formulário `multipart/form-data` com arquivos de vídeo e legendas SRT. |
-| `POST` | `/api/convert` | Recebe a lista de itens selecionados e configurações de legendas para iniciar a conversão em lote. |
-| `GET` | `/api/download/file` | Parâmetros: `sessionId` e `filename`. Realiza download de um arquivo MKV gerado. |
-| `GET` | `/api/download/zip` | Parâmetro: `sessionId`. Gera e envia o pacote ZIP de todos os arquivos MKV convertidos. |
-| `POST` | `/api/cancel` | Interrompe imediatamente o processamento ativo do lote e encerra os processos FFmpeg. |
+| `GET` | `/api/events` | **Server-Sent Events (SSE)**. Streams real-time processing logs and progress updates. |
+| `POST` | `/api/validate-path` | Accepts `{ pathDir }` and validates local directory existence. |
+| `POST` | `/api/scan` | Accepts `{ sourceDir, destDir, forcedEncoding }` and scans matching files. |
+| `POST` | `/api/upload-files` | Accepts `multipart/form-data` uploads into `input/` with SHA-256 check. |
+| `POST` | `/api/convert` | Accepts item selection and track modes to trigger batch conversion. |
+| `GET` | `/api/download/file` | Parameters: `sessionId`, `filename`. Downloads a generated MKV file. |
+| `GET` | `/api/download/zip` | Parameter: `sessionId`. Generates and streams a ZIP file of output MKVs. |
+| `POST` | `/api/cancel` | Cancels active batch conversion and terminates spawned FFmpeg processes. |
 
 ---
 
-## ❓ Solução de Problemas (Troubleshooting)
+## ❓ Troubleshooting
 
-#### 1. Acentuação incorreta nas legendas (caracteres estranhos como `Ã§` ou `?`)
-- **Solução**: No painel **Configurações da Legenda no MKV**, altere a opção **Codificação da Legenda no FFmpeg** de `✨ Auto-detectar` para `WINDOWS-1252 / CP1252 (Legendas em Português/ANSI)` ou `ISO-8859-1`.
+#### 1. Garbled subtitle accents (e.g. `Ã§` or `?`)
+- **Solution**: In **Subtitle & Transcoding Settings**, change **FFmpeg Subtitle Encoding** from `✨ Auto-detect` to `WINDOWS-1252 / CP1252` or `ISO-8859-1`.
 
-#### 2. Erro "FFmpeg não encontrado" ou "spawn ffmpeg ENOENT"
-- **Solução**: O FFmpeg não está instalado ou não foi adicionado às variáveis de ambiente do sistema. Baixe o FFmpeg, adicione a pasta `bin` ao `PATH` e reinicie o terminal/aplicação.
+#### 2. "FFmpeg not found" or "spawn ffmpeg ENOENT"
+- **Solution**: FFmpeg is not installed or not in system `PATH`. Install FFmpeg, add its `bin` folder to system environment variables, and restart the server.
 
-#### 3. Falha ao gerar arquivo ZIP no Modo Importar
-- **Solução (Windows)**: Certifique-se de que o PowerShell está habilitado e permite a execução de comandos nativos (`Compress-Archive`).
-- **Solução (Linux/macOS)**: Instale o utilitário `zip` (`sudo apt install zip` ou `brew install zip`).
+#### 3. ZIP Download Failure in Import Mode
+- **Windows Solution**: Ensure PowerShell is enabled and permits running native compression commands (`Compress-Archive`).
+- **Linux/macOS Solution**: Install `zip` CLI utility (`sudo apt install zip` or `brew install zip`).
 
 ---
 
 ## 📝 Changelog
 
-### Versão 1.2.0
-- 📂 **Subpastas Input e Output**: Arquivos importados via *Modo Importar Arquivos* são salvos na pasta `input/` e os MKVs convertidos são salvos na pasta `output/`.
-- 📊 **Barra de Progresso de Upload**: Adicionada barra de progresso em tempo real no envio de arquivos via navegador.
-- 🔒 **Verificação por Checksum (SHA-256)**: Ao importar um arquivo, a aplicação verifica primeiramente pelo nome e depois pelo checksum SHA-256 para evitar regravações redundantes.
-- 🎵 **Multiplexação de Áudio Externa**: Suporte para pareamento e embutimento de faixas de áudio externas (`.mp3`, `.m4a`, `.aac`, `.flac`, `.wav`, `.ogg`, `.ac3`, `.opus`, `.wma`).
-- 🌐 **Detecção de Idioma de Áudio**: Reconhecimento automático do idioma da faixa de áudio por nome de arquivo (com fallback para `undefined` / `und`). Opções para áudio restritas a `selectable` e `none`.
-- 🎨 **Ícones Indicativos de Tipo**: Interface com ícones e cores distintas para faixas de legenda (CC) e faixas de áudio (Música/Fone).
-- 📦 **Atualização de Versão**: Versão atualizada para `1.2.0` no [`package.json`](file:///f:/developerenv/mkv_studio/package.json).
+### Version 1.2.0
+- 📂 **Input and Output Folders**: Uploaded files in Import Mode save to `input/` and output MKV files save to `output/`.
+- 📊 **Upload Progress Bar**: Added real-time progress bar when uploading files through the browser.
+- 🔒 **SHA-256 Checksum Verification**: Validates existing filenames and SHA-256 hashes in `input/` to avoid redundant uploads.
+- 🎵 **External Audio Multiplexing**: Support for external audio tracks (`.mp3`, `.m4a`, `.aac`, `.flac`, `.wav`, `.ogg`, `.ac3`, `.opus`, `.wma`).
+- 🌐 **Audio Language Detection**: Filename language detection for audio files (defaults to `undefined` / `und`). Audio selection mode options are restricted to `selectable` and `none`.
+- 🎨 **Visual Type Badges**: Interface icons and distinct color coding for subtitles (CC) and audio tracks (Music/Audio).
+- 🌐 **Full English Localization**: Translated UI, log messages, server APIs, and documentation (`readme.md`) to English.
+- 📦 **Version Bump**: Updated version number to `1.2.0` in [`package.json`](file:///f:/developerenv/mkv_studio/package.json).
 
-### Versão 1.1.0
-- 🎬 **Exclusividade de Queima de Legenda (Burn-in)**: Ao selecionar a opção `burn` em qualquer faixa de legenda de um vídeo, todas as demais legendas desse mesmo vídeo são ajustadas automaticamente para `none`.
-- ⚡ **Seleção de Acelerador de Hardware**: Adicionada opção no painel de configurações para o usuário escolher o acelerador de vídeo utilizado pelo FFmpeg (`CPU / libx264`, `NVIDIA NVENC`, `Intel QuickSync`, `AMD AMF`, `Linux VAAPI`, `Apple VideoToolbox`).
-- 📦 **Atualização de Versão**: Atualizado o número de versão no [`package.json`](file:///f:/developerenv/mkv_studio/package.json) para `1.1.0`.
+### Version 1.1.0
+- 🎬 **Burn-in Subtitle Exclusivity**: Selecting `burn` on any subtitle track automatically sets other subtitle tracks of the same video to `none`.
+- ⚡ **Hardware Acceleration Selection**: Added hardware accelerator selection for FFmpeg (`CPU / libx264`, `NVIDIA NVENC`, `Intel QuickSync`, `AMD AMF`, `Linux VAAPI`, `Apple VideoToolbox`).
+- 📦 **Version Bump**: Updated version number to `1.1.0` in [`package.json`](file:///f:/developerenv/mkv_studio/package.json).
 
 ---
 
-## 📄 Licença
+## 📄 License
 
-Este projeto é fornecido sob a licença MIT. Sinta-se livre para modificar, redistribuir e aprimorar.
+This project is licensed under the MIT License. Feel free to modify and redistribute.
 
-*Desenvolvido com Node.js, Express & FFmpeg.*
+*Developed with Node.js, Express & FFmpeg.*
+

@@ -124,12 +124,12 @@ document.addEventListener('DOMContentLoaded', () => {
       formData.append('files', files[i]);
     }
 
-    appendLog('info', `Enviando ${files.length} arquivo(s) para a pasta input...`);
-    statusText.textContent = 'Enviando arquivos...';
+    appendLog('info', `Uploading ${files.length} file(s) to input folder...`);
+    statusText.textContent = 'Uploading files...';
     if (uploadProgressContainer) {
       uploadProgressContainer.classList.remove('hidden');
       uploadProgressBarFill.style.width = '0%';
-      uploadProgressText.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Enviando arquivos para a pasta input: 0%`;
+      uploadProgressText.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Uploading files to input folder: 0%`;
     }
 
     const xhr = new XMLHttpRequest();
@@ -139,13 +139,13 @@ document.addEventListener('DOMContentLoaded', () => {
       if (e.lengthComputable && uploadProgressContainer) {
         const percent = Math.round((e.loaded / e.total) * 100);
         uploadProgressBarFill.style.width = `${percent}%`;
-        uploadProgressText.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Enviando arquivos para a pasta input: ${percent}%`;
+        uploadProgressText.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Uploading files to input folder: ${percent}%`;
       }
     };
 
     xhr.onload = () => {
       if (uploadProgressContainer) uploadProgressContainer.classList.add('hidden');
-      statusText.textContent = 'Pronto';
+      statusText.textContent = 'Ready';
 
       if (xhr.status >= 200 && xhr.status < 300) {
         try {
@@ -156,11 +156,11 @@ document.addEventListener('DOMContentLoaded', () => {
           scannedItems = data.items || [];
 
           renderFileList(scannedItems);
-          appendLog('success', `Upload concluído com sucesso. ${data.totalVideos} vídeo(s) pronto(s) para conversão.`);
+          appendLog('success', `Upload completed successfully. ${data.totalVideos} video(s) ready for conversion.`);
           btnConvert.disabled = scannedItems.length === 0;
         } catch (err) {
-          appendLog('error', `Erro ao processar resposta do upload: ${err.message}`);
-          alert(`Falha ao processar arquivos: ${err.message}`);
+          appendLog('error', `Error processing upload response: ${err.message}`);
+          alert(`Failed to process files: ${err.message}`);
         }
       } else {
         let errMsg = xhr.statusText;
@@ -168,16 +168,16 @@ document.addEventListener('DOMContentLoaded', () => {
           const errData = JSON.parse(xhr.responseText);
           if (errData.error) errMsg = errData.error;
         } catch (e) {}
-        appendLog('error', `Erro no upload: ${errMsg}`);
-        alert(`Falha ao enviar arquivos: ${errMsg}`);
+        appendLog('error', `Upload error: ${errMsg}`);
+        alert(`Failed to upload files: ${errMsg}`);
       }
     };
 
     xhr.onerror = () => {
       if (uploadProgressContainer) uploadProgressContainer.classList.add('hidden');
-      statusText.textContent = 'Pronto';
-      appendLog('error', `Erro de conexão ao enviar arquivos.`);
-      alert(`Falha na conexão de rede ao enviar arquivos.`);
+      statusText.textContent = 'Ready';
+      appendLog('error', `Network error uploading files.`);
+      alert(`Network connection failure while uploading files.`);
     };
 
     xhr.send(formData);
@@ -190,12 +190,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const forcedEncoding = subtitleEncodingSelect.value;
 
     if (!sourceDir || !destDir) {
-      alert('Por favor, preencha ambas as pastas de origem e destino.');
+      alert('Please fill in both source and destination folders.');
       return;
     }
 
     btnScan.disabled = true;
-    btnScan.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Analisando...';
+    btnScan.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Analyzing...';
 
     try {
       const response = await fetch('/api/scan', {
@@ -206,7 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || 'Erro ao realizar varredura.');
+        throw new Error(data.error || 'Error performing scan.');
       }
 
       scannedItems = data.items || [];
@@ -219,11 +219,11 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
     } catch (err) {
-      appendLog('error', `Erro na análise: ${err.message}`);
-      alert(`Erro ao analisar pasta: ${err.message}`);
+      appendLog('error', `Scan error: ${err.message}`);
+      alert(`Error scanning folder: ${err.message}`);
     } finally {
       btnScan.disabled = false;
-      btnScan.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i> Analisar Arquivos';
+      btnScan.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i> Analyze Files';
     }
   });
 
@@ -245,7 +245,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const selectedIds = Array.from(checkboxes).map(cb => cb.dataset.itemId);
 
     if (selectedIds.length === 0) {
-      alert('Selecione pelo menos um arquivo de vídeo para converter.');
+      alert('Select at least one video file to convert.');
       return;
     }
 
@@ -284,27 +284,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || 'Não foi possível iniciar o processamento.');
+        throw new Error(data.error || 'Could not start processing.');
       }
 
       setConvertingState(true);
-      appendLog('info', `Iniciando conversão de ${selectedIds.length} arquivo(s)...`);
+      appendLog('info', `Starting conversion of ${selectedIds.length} file(s)...`);
 
     } catch (err) {
-      appendLog('error', `Falha ao iniciar conversão: ${err.message}`);
+      appendLog('error', `Failed to start conversion: ${err.message}`);
       alert(err.message);
     }
   });
 
   // EVENTO: Cancelar
   btnCancel.addEventListener('click', async () => {
-    if (!confirm('Deseja realmente cancelar o processamento atual?')) return;
+    if (!confirm('Are you sure you want to cancel the current processing?')) return;
 
     try {
       await fetch('/api/cancel', { method: 'POST' });
-      appendLog('warning', 'Solicitação de cancelamento enviada.');
+      appendLog('warning', 'Cancellation request sent.');
     } catch (err) {
-      appendLog('error', `Erro ao cancelar: ${err.message}`);
+      appendLog('error', `Error canceling: ${err.message}`);
     }
   });
 
@@ -325,7 +325,7 @@ document.addEventListener('DOMContentLoaded', () => {
       .map(line => line.textContent)
       .join('\n');
     navigator.clipboard.writeText(logText).then(() => {
-      alert('Logs copiados para a área de transferência!');
+      alert('Logs copied to clipboard!');
     });
   });
 
@@ -347,16 +347,16 @@ document.addEventListener('DOMContentLoaded', () => {
     eventSource.addEventListener('job_start', (e) => {
       const data = JSON.parse(e.data);
       setConvertingState(true);
-      progressStepText.textContent = `0 / ${data.totalItems} concluídos`;
+      progressStepText.textContent = `0 / ${data.totalItems} completed`;
     });
 
     eventSource.addEventListener('progress', (e) => {
       const p = JSON.parse(e.data);
       currentProcessingItem.textContent = p.currentItemName;
-      progressStepText.textContent = `${p.currentIndex} de ${p.totalItems} em andamento`;
+      progressStepText.textContent = `${p.currentIndex} of ${p.totalItems} in progress`;
 
       itemProgressBar.style.width = `${p.itemPercent}%`;
-      itemPercentText.textContent = `${p.itemPercent}% (arquivo atual)`;
+      itemPercentText.textContent = `${p.itemPercent}% (current file)`;
 
       overallProgressBar.style.width = `${p.overallPercent}%`;
       overallPercentText.textContent = `${p.overallPercent}%`;
@@ -367,9 +367,8 @@ document.addEventListener('DOMContentLoaded', () => {
       setConvertingState(false);
       overallProgressBar.style.width = '100%';
       overallPercentText.textContent = '100%';
-      currentProcessingItem.textContent = `Processamento ${data.status}`;
+      currentProcessingItem.textContent = `Processing ${data.status}`;
 
-      // Se for modo arquivos importados (ou possuir sessionId), exibe o painel de download
       if ((currentMode === 'files' || data.sessionId) && data.generatedFiles && data.generatedFiles.length > 0) {
         renderDownloadPanel(data.sessionId || currentSessionId, data.generatedFiles);
       }
@@ -377,12 +376,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     eventSource.onerror = () => {
       statusIndicator.className = 'status-indicator offline';
-      statusText.textContent = 'Desconectado';
+      statusText.textContent = 'Disconnected';
     };
 
     eventSource.onopen = () => {
       statusIndicator.className = 'status-indicator online';
-      statusText.textContent = 'Pronto';
+      statusText.textContent = 'Ready';
     };
   }
 
@@ -397,7 +396,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <span>${escapeHtml(file)}</span>
         </div>
         <a href="/api/download/file?sessionId=${encodeURIComponent(sessionId)}&filename=${encodeURIComponent(file)}" class="btn btn-secondary btn-sm" download>
-          <i class="fa-solid fa-download"></i> Baixar MKV
+          <i class="fa-solid fa-download"></i> Download MKV
         </a>
       </div>
     `).join('');
@@ -405,7 +404,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function validatePath(pathStr, hintElement) {
     if (!pathStr.trim()) {
-      hintElement.textContent = 'Por favor, insira um caminho válido.';
+      hintElement.textContent = 'Please enter a valid path.';
       hintElement.style.color = '#ef4444';
       return;
     }
@@ -425,7 +424,7 @@ document.addEventListener('DOMContentLoaded', () => {
         hintElement.style.color = '#ef4444';
       }
     } catch (e) {
-      hintElement.textContent = `Erro ao validar caminho: ${e.message}`;
+      hintElement.textContent = `Error validating path: ${e.message}`;
       hintElement.style.color = '#ef4444';
     }
   }
@@ -479,7 +478,7 @@ document.addEventListener('DOMContentLoaded', () => {
       fileListContainer.innerHTML = `
         <div class="empty-state">
           <i class="fa-solid fa-file-video"></i>
-          <p>Nenhum arquivo de vídeo (.mp4, .avi, etc.) carregado.</p>
+          <p>No video files (.mp4, .avi, etc.) loaded.</p>
         </div>
       `;
       return;
@@ -497,7 +496,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return `
               <div class="sub-row">
                 <div class="sub-info">
-                  <span class="sub-tag" title="Legenda SRT">
+                  <span class="sub-tag" title="SRT Subtitle">
                     <span class="lang-code">${sub.langCode}</span>
                     <i class="fa-solid fa-closed-captioning"></i> ${sub.langName}
                   </span>
@@ -511,7 +510,7 @@ document.addEventListener('DOMContentLoaded', () => {
               </div>
             `;
           }).join('')
-        : '<span class="sub-tag no-sub"><i class="fa-solid fa-triangle-exclamation"></i> Nenhuma legenda SRT encontrada</span>';
+        : '<span class="sub-tag no-sub"><i class="fa-solid fa-triangle-exclamation"></i> No SRT subtitles found</span>';
 
       const audioBadges = (item.audioTracks && item.audioTracks.length > 0)
         ? item.audioTracks.map((audio, idx) => {
@@ -519,7 +518,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return `
               <div class="sub-row">
                 <div class="sub-info">
-                  <span class="audio-tag" title="Faixa de Áudio">
+                  <span class="audio-tag" title="Audio Track">
                     <span class="lang-code">${audio.langCode}</span>
                     <i class="fa-solid fa-file-audio"></i> ${audio.langName}
                   </span>
@@ -554,16 +553,16 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function appendLog(type, message, timestamp) {
-    const time = timestamp || new Date().toLocaleTimeString('pt-BR');
+    const time = timestamp || new Date().toLocaleTimeString();
     const line = document.createElement('div');
     line.className = `log-line ${type}`;
 
     const badgeLabel = {
       info: 'INFO',
-      success: 'SUCESSO',
-      warning: 'AVISO',
-      error: 'ERRO',
-      cmd: 'COMANDO',
+      success: 'SUCCESS',
+      warning: 'WARNING',
+      error: 'ERROR',
+      cmd: 'COMMAND',
       ffmpeg: 'FFMPEG'
     }[type] || 'LOG';
 
@@ -588,10 +587,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (converting) {
       statusIndicator.className = 'status-indicator converting';
-      statusText.textContent = 'Processando...';
+      statusText.textContent = 'Processing...';
     } else {
       statusIndicator.className = 'status-indicator online';
-      statusText.textContent = 'Pronto';
+      statusText.textContent = 'Ready';
     }
   }
 
