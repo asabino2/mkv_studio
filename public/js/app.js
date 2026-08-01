@@ -16,6 +16,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Elementos - Upload de Arquivos (Modo Arquivos)
   const dropZone = document.getElementById('dropZone');
   const fileUploadInput = document.getElementById('fileUploadInput');
+  const uploadProgressContainer = document.getElementById('uploadProgressContainer');
+  const uploadProgressText = document.getElementById('uploadProgressText');
+  const uploadProgressBarFill = document.getElementById('uploadProgressBarFill');
 
   // Elementos - Configurações Globais & Ações
   const hardwareAccelSelect = document.getElementById('hardwareAccelSelect');
@@ -115,44 +118,69 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  async function handleFileUpload(files) {
+  function handleFileUpload(files) {
     const formData = new FormData();
     for (let i = 0; i < files.length; i++) {
       formData.append('files', files[i]);
     }
 
-    appendLog('info', `Enviando ${files.length} arquivo(s) para o servidor...`);
+    appendLog('info', `Enviando ${files.length} arquivo(s) para a pasta input...`);
     statusText.textContent = 'Enviando arquivos...';
-
-    try {
-      const response = await fetch('/api/upload-files', {
-        method: 'POST',
-        body: formData
-      });
-
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Erro ao enviar arquivos.');
-
-      currentSessionId = data.sessionId;
-      currentSessionSourceDir = data.sourceDir;
-      currentSessionDestDir = data.destDir;
-      scannedItems = data.items || [];
-
-      renderFileList(scannedItems);
-      appendLog('success', `Upload concluído com sucesso. ${data.totalVideos} vídeo(s) pronto(s) para conversão.`);
-
-      if (scannedItems.length > 0) {
-        btnConvert.disabled = false;
-      } else {
-        btnConvert.disabled = true;
-      }
-
-    } catch (err) {
-      appendLog('error', `Erro no upload: ${err.message}`);
-      alert(`Falha ao enviar arquivos: ${err.message}`);
-    } finally {
-      statusText.textContent = 'Pronto';
+    if (uploadProgressContainer) {
+      uploadProgressContainer.classList.remove('hidden');
+      uploadProgressBarFill.style.width = '0%';
+      uploadProgressText.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Enviando arquivos para a pasta input: 0%`;
     }
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/upload-files', true);
+
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable && uploadProgressContainer) {
+        const percent = Math.round((e.loaded / e.total) * 100);
+        uploadProgressBarFill.style.width = `${percent}%`;
+        uploadProgressText.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Enviando arquivos para a pasta input: ${percent}%`;
+      }
+    };
+
+    xhr.onload = () => {
+      if (uploadProgressContainer) uploadProgressContainer.classList.add('hidden');
+      statusText.textContent = 'Pronto';
+
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const data = JSON.parse(xhr.responseText);
+          currentSessionId = data.sessionId;
+          currentSessionSourceDir = data.sourceDir;
+          currentSessionDestDir = data.destDir;
+          scannedItems = data.items || [];
+
+          renderFileList(scannedItems);
+          appendLog('success', `Upload concluído com sucesso. ${data.totalVideos} vídeo(s) pronto(s) para conversão.`);
+          btnConvert.disabled = scannedItems.length === 0;
+        } catch (err) {
+          appendLog('error', `Erro ao processar resposta do upload: ${err.message}`);
+          alert(`Falha ao processar arquivos: ${err.message}`);
+        }
+      } else {
+        let errMsg = xhr.statusText;
+        try {
+          const errData = JSON.parse(xhr.responseText);
+          if (errData.error) errMsg = errData.error;
+        } catch (e) {}
+        appendLog('error', `Erro no upload: ${errMsg}`);
+        alert(`Falha ao enviar arquivos: ${errMsg}`);
+      }
+    };
+
+    xhr.onerror = () => {
+      if (uploadProgressContainer) uploadProgressContainer.classList.add('hidden');
+      statusText.textContent = 'Pronto';
+      appendLog('error', `Erro de conexão ao enviar arquivos.`);
+      alert(`Falha na conexão de rede ao enviar arquivos.`);
+    };
+
+    xhr.send(formData);
   }
 
   // EVENTO: Analisar Pastas (Modo Pasta)
@@ -224,10 +252,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const itemsConfig = {};
     scannedItems.forEach(item => {
       if (selectedIds.includes(item.id)) {
-        itemsConfig[item.id] = item.subtitles.map(sub => ({
-          srtName: sub.srtName,
-          mode: sub.mode || 'selectable'
-        }));
+        itemsConfig[item.id] = {
+          subtitles: (item.subtitles || []).map(sub => ({
+            srtName: sub.srtName,
+            mode: sub.mode || 'selectable'
+          })),
+          audioTracks: (item.audioTracks || []).map(audio => ({
+            audioName: audio.audioName,
+            mode: audio.mode || 'selectable'
+          }))
+        };
       }
     });
 
@@ -397,32 +431,45 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   fileListContainer.addEventListener('change', (e) => {
-    if (!e.target.classList.contains('sub-mode-select')) return;
-    const selectEl = e.target;
-    const itemId = selectEl.dataset.itemId;
-    const subIndex = parseInt(selectEl.dataset.subIndex, 10);
-    const newMode = selectEl.value;
+    if (e.target.classList.contains('sub-mode-select')) {
+      const selectEl = e.target;
+      const itemId = selectEl.dataset.itemId;
+      const subIndex = parseInt(selectEl.dataset.subIndex, 10);
+      const newMode = selectEl.value;
 
-    selectEl.setAttribute('data-mode', newMode);
+      selectEl.setAttribute('data-mode', newMode);
 
-    const item = scannedItems.find(i => i.id === itemId);
-    if (!item || !item.subtitles[subIndex]) return;
+      const item = scannedItems.find(i => i.id === itemId);
+      if (!item || !item.subtitles[subIndex]) return;
 
-    if (newMode === 'burn') {
-      const siblingSelects = fileListContainer.querySelectorAll(`.sub-mode-select[data-item-id="${itemId}"]`);
-      siblingSelects.forEach((otherSelect) => {
-        if (otherSelect !== selectEl) {
-          const otherIdx = parseInt(otherSelect.dataset.subIndex, 10);
-          otherSelect.value = 'none';
-          otherSelect.setAttribute('data-mode', 'none');
-          if (item.subtitles[otherIdx]) {
-            item.subtitles[otherIdx].mode = 'none';
+      if (newMode === 'burn') {
+        const siblingSelects = fileListContainer.querySelectorAll(`.sub-mode-select[data-item-id="${itemId}"]`);
+        siblingSelects.forEach((otherSelect) => {
+          if (otherSelect !== selectEl) {
+            const otherIdx = parseInt(otherSelect.dataset.subIndex, 10);
+            otherSelect.value = 'none';
+            otherSelect.setAttribute('data-mode', 'none');
+            if (item.subtitles[otherIdx]) {
+              item.subtitles[otherIdx].mode = 'none';
+            }
           }
-        }
-      });
-    }
+        });
+      }
 
-    item.subtitles[subIndex].mode = newMode;
+      item.subtitles[subIndex].mode = newMode;
+    } else if (e.target.classList.contains('audio-mode-select')) {
+      const selectEl = e.target;
+      const itemId = selectEl.dataset.itemId;
+      const audioIndex = parseInt(selectEl.dataset.audioIndex, 10);
+      const newMode = selectEl.value;
+
+      selectEl.setAttribute('data-mode', newMode);
+
+      const item = scannedItems.find(i => i.id === itemId);
+      if (!item || !item.audioTracks || !item.audioTracks[audioIndex]) return;
+
+      item.audioTracks[audioIndex].mode = newMode;
+    }
   });
 
   function renderFileList(items) {
@@ -443,16 +490,16 @@ document.addEventListener('DOMContentLoaded', () => {
     fileListContainer.innerHTML = items.map(item => {
       const sizeMB = (item.videoSize / (1024 * 1024)).toFixed(1);
 
-      const subBadges = item.subtitles.length > 0
+      const subBadges = (item.subtitles && item.subtitles.length > 0)
         ? item.subtitles.map((sub, idx) => {
             if (!sub.mode) sub.mode = 'selectable';
             const encTag = selEnc !== 'AUTO' ? `sub_charenc: ${selEnc}` : (sub.encoding && sub.encoding !== 'utf-8' ? `sub_charenc: ${sub.encoding.toUpperCase()}` : 'UTF-8');
             return `
               <div class="sub-row">
                 <div class="sub-info">
-                  <span class="sub-tag">
+                  <span class="sub-tag" title="Legenda SRT">
                     <span class="lang-code">${sub.langCode}</span>
-                    <i class="fa-regular fa-closed-captioning"></i> ${sub.langName}
+                    <i class="fa-solid fa-closed-captioning"></i> ${sub.langName}
                   </span>
                   <span class="sub-name">(${escapeHtml(sub.srtName)} • ${encTag})</span>
                 </div>
@@ -466,6 +513,27 @@ document.addEventListener('DOMContentLoaded', () => {
           }).join('')
         : '<span class="sub-tag no-sub"><i class="fa-solid fa-triangle-exclamation"></i> Nenhuma legenda SRT encontrada</span>';
 
+      const audioBadges = (item.audioTracks && item.audioTracks.length > 0)
+        ? item.audioTracks.map((audio, idx) => {
+            if (!audio.mode) audio.mode = 'selectable';
+            return `
+              <div class="sub-row">
+                <div class="sub-info">
+                  <span class="audio-tag" title="Faixa de Áudio">
+                    <span class="lang-code">${audio.langCode}</span>
+                    <i class="fa-solid fa-file-audio"></i> ${audio.langName}
+                  </span>
+                  <span class="sub-name">(${escapeHtml(audio.audioName)})</span>
+                </div>
+                <select class="audio-mode-select" data-item-id="${item.id}" data-audio-index="${idx}" data-mode="${audio.mode}">
+                  <option value="selectable" ${audio.mode === 'selectable' ? 'selected' : ''}>selectable</option>
+                  <option value="none" ${audio.mode === 'none' ? 'selected' : ''}>none</option>
+                </select>
+              </div>
+            `;
+          }).join('')
+        : '';
+
       return `
         <div class="file-item" data-id="${item.id}">
           <div class="file-item-header">
@@ -478,6 +546,7 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>
           <div class="subtitle-list">
             ${subBadges}
+            ${audioBadges}
           </div>
         </div>
       `;

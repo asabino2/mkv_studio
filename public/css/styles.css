@@ -623,6 +623,28 @@ body {
   color: #fca5a5;
 }
 
+.audio-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(6, 182, 212, 0.15);
+  border: 1px solid rgba(6, 182, 212, 0.3);
+  color: #a5f3fc;
+  font-size: 0.78rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+}
+
+.audio-tag .lang-code {
+  font-weight: 700;
+  text-transform: uppercase;
+  background: var(--accent-secondary);
+  color: #fff;
+  padding: 0.05rem 0.35rem;
+  border-radius: 6px;
+  font-size: 0.7rem;
+}
+
 .sub-mode-select {
   background: rgba(15, 23, 42, 0.9);
   border: 1px solid rgba(99, 102, 241, 0.4);
@@ -636,7 +658,53 @@ body {
   transition: all 0.2s ease;
 }
 
-.sub-mode-select:focus {
+.audio-mode-select {
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(6, 182, 212, 0.4);
+  border-radius: 6px;
+  padding: 0.25rem 0.6rem;
+  color: #e2e8f0;
+  font-size: 0.78rem;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.audio-mode-select[data-mode="selectable"] {
+  border-color: rgba(6, 182, 212, 0.5);
+  color: #a5f3fc;
+  background: rgba(6, 182, 212, 0.15);
+}
+
+.audio-mode-select[data-mode="none"] {
+  border-color: rgba(100, 116, 139, 0.4);
+  color: #94a3b8;
+  background: rgba(15, 23, 42, 0.5);
+}
+
+.upload-progress-container {
+  margin-top: 1rem;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: var(--radius-sm);
+  padding: 0.8rem 1rem;
+}
+
+.upload-progress-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--accent-secondary);
+}
+
+.progress-bar-fill.upload-fill {
+  background: linear-gradient(90deg, #06b6d4 0%, #3b82f6 100%);
+}
+
+.sub-mode-select:focus, .audio-mode-select:focus {
   border-color: var(--accent-primary);
   box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3);
 }

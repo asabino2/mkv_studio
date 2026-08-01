@@ -1,6 +1,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const { scanDirectory } = require('./lib/scanner.js');
 const FFmpegWorker = require('./lib/ffmpegRunner.js');
 const { createZipFromFolder } = require('./lib/mkvZipHelper.js');
@@ -8,9 +9,17 @@ const { createZipFromFolder } = require('./lib/mkvZipHelper.js');
 const PORT = process.env.PORT || 3000;
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const TEMP_STORAGE_DIR = path.join(__dirname, 'temp_storage');
+const INPUT_DIR = path.join(__dirname, 'input');
+const OUTPUT_DIR = path.join(__dirname, 'output');
 
 if (!fs.existsSync(TEMP_STORAGE_DIR)) {
   fs.mkdirSync(TEMP_STORAGE_DIR, { recursive: true });
+}
+if (!fs.existsSync(INPUT_DIR)) {
+  fs.mkdirSync(INPUT_DIR, { recursive: true });
+}
+if (!fs.existsSync(OUTPUT_DIR)) {
+  fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 }
 
 const MIME_TYPES = {
@@ -111,7 +120,20 @@ function parseMultipartForm(req, saveDir) {
                   bodyBuffer = bodyBuffer.subarray(0, bodyBuffer.length - 2);
                 }
                 const savePath = path.join(saveDir, filename);
-                fs.writeFileSync(savePath, bodyBuffer);
+                if (fs.existsSync(savePath)) {
+                  const existingBuffer = fs.readFileSync(savePath);
+                  const existingHash = crypto.createHash('sha256').update(existingBuffer).digest('hex');
+                  const uploadedHash = crypto.createHash('sha256').update(bodyBuffer).digest('hex');
+
+                  if (existingHash === uploadedHash) {
+                    broadcastLog('info', `[Checksum Match] O arquivo "${filename}" já existe na pasta input e é idêntico. Mantido sem sobrescrever.`);
+                  } else {
+                    broadcastLog('info', `[Checksum Mismatch] O arquivo "${filename}" já existe na pasta input, mas com conteúdo diferente. Atualizando arquivo...`);
+                    fs.writeFileSync(savePath, bodyBuffer);
+                  }
+                } else {
+                  fs.writeFileSync(savePath, bodyBuffer);
+                }
                 fileCount++;
               }
             }
@@ -235,18 +257,15 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
-  // 4. Rota: /api/upload-files (Upload de Arquivos Individuais)
+  // 4. Rota: /api/upload-files (Upload de Arquivos para Pasta Input)
   if (req.method === 'POST' && pathname === '/api/upload-files') {
     try {
       const sessionId = 'session_' + Date.now();
-      const sessionSourceDir = path.join(TEMP_STORAGE_DIR, sessionId, 'source');
-      const sessionDestDir = path.join(TEMP_STORAGE_DIR, sessionId, 'dest');
-
-      fs.mkdirSync(sessionSourceDir, { recursive: true });
-      fs.mkdirSync(sessionDestDir, { recursive: true });
+      const sessionSourceDir = INPUT_DIR;
+      const sessionDestDir = OUTPUT_DIR;
 
       const count = await parseMultipartForm(req, sessionSourceDir);
-      broadcastLog('info', `Upload de ${count} arquivo(s) concluído para a sessão "${sessionId}". Analisando arquivos...`);
+      broadcastLog('info', `Upload de ${count} arquivo(s) concluído para a pasta "input". Analisando arquivos...`);
 
       const scanResult = scanDirectory(sessionSourceDir, sessionDestDir);
       res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -284,16 +303,30 @@ const server = http.createServer(async (req, res) => {
 
       if (itemsConfig && typeof itemsConfig === 'object') {
         itemsToProcess.forEach(item => {
-          const itemSubModes = itemsConfig[item.id];
-          if (Array.isArray(itemSubModes)) {
-            item.subtitles.forEach((sub, sIdx) => {
-              const matchingConfig = itemSubModes[sIdx] || itemSubModes.find(c => c.srtName === sub.srtName);
-              if (matchingConfig && matchingConfig.mode) {
-                sub.mode = matchingConfig.mode;
-              } else {
-                sub.mode = 'selectable';
-              }
-            });
+          const config = itemsConfig[item.id];
+          if (config) {
+            const subConfig = Array.isArray(config) ? config : config.subtitles;
+            if (Array.isArray(subConfig)) {
+              item.subtitles.forEach((sub, sIdx) => {
+                const matchingConfig = subConfig[sIdx] || subConfig.find(c => c.srtName === sub.srtName);
+                if (matchingConfig && matchingConfig.mode) {
+                  sub.mode = matchingConfig.mode;
+                } else {
+                  sub.mode = 'selectable';
+                }
+              });
+            }
+            const audioConfig = !Array.isArray(config) ? config.audioTracks : null;
+            if (Array.isArray(audioConfig) && item.audioTracks) {
+              item.audioTracks.forEach((audio, aIdx) => {
+                const matchingConfig = audioConfig[aIdx] || audioConfig.find(c => c.audioName === audio.audioName);
+                if (matchingConfig && matchingConfig.mode) {
+                  audio.mode = matchingConfig.mode;
+                } else {
+                  audio.mode = 'selectable';
+                }
+              });
+            }
           }
         });
       }
@@ -397,12 +430,16 @@ const server = http.createServer(async (req, res) => {
     const sessionId = url.searchParams.get('sessionId');
     const filename = url.searchParams.get('filename');
 
-    if (!sessionId || !filename) {
+    if (!filename) {
       res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
       return res.end('Parâmetros de download inválidos.');
     }
 
-    const filePath = path.join(TEMP_STORAGE_DIR, sessionId, 'dest', filename);
+    let filePath = path.join(OUTPUT_DIR, filename);
+    if (!fs.existsSync(filePath) && sessionId) {
+      filePath = path.join(TEMP_STORAGE_DIR, sessionId, 'dest', filename);
+    }
+
     if (!fs.existsSync(filePath)) {
       res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
       return res.end('Arquivo não encontrado.');
@@ -420,15 +457,19 @@ const server = http.createServer(async (req, res) => {
 
   // 7. Rota: /api/download/zip (Download de Todos os MKVs em ZIP)
   if (req.method === 'GET' && pathname === '/api/download/zip') {
-    const sessionId = url.searchParams.get('sessionId');
+    const sessionId = url.searchParams.get('sessionId') || 'output_batch';
+    const zipName = `MKV_Convertidos_${Date.now()}.zip`;
 
-    if (!sessionId) {
-      res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
-      return res.end('ID de sessão inválido.');
+    let destDir = OUTPUT_DIR;
+    let zipPath = path.join(OUTPUT_DIR, zipName);
+
+    if (sessionId && sessionId.startsWith('session_')) {
+      const sessionDest = path.join(TEMP_STORAGE_DIR, sessionId, 'dest');
+      if (fs.existsSync(sessionDest) && fs.readdirSync(sessionDest).length > 0) {
+        destDir = sessionDest;
+        zipPath = path.join(TEMP_STORAGE_DIR, sessionId, zipName);
+      }
     }
-
-    const destDir = path.join(TEMP_STORAGE_DIR, sessionId, 'dest');
-    const zipPath = path.join(TEMP_STORAGE_DIR, sessionId, `MKV_Convertidos_${sessionId}.zip`);
 
     try {
       const finalZipPath = createZipFromFolder(destDir, zipPath);
@@ -437,7 +478,7 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(200, {
         'Content-Type': 'application/zip',
         'Content-Length': stat.size,
-        'Content-Disposition': `attachment; filename="MKV_Convertidos_${sessionId}.zip"`
+        'Content-Disposition': `attachment; filename="${zipName}"`
       });
       fs.createReadStream(finalZipPath).pipe(res);
       return;

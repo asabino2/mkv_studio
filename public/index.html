@@ -93,21 +93,31 @@
         <!-- Cartão de Importação de Arquivos (Modo Importar Arquivos) -->
         <div class="card glass-card hidden" id="filesConfigPanel">
           <div class="card-header">
-            <h2><i class="fa-solid fa-cloud-arrow-up"></i> Importar Arquivos de Vídeo e Legendas SRT</h2>
+            <h2><i class="fa-solid fa-cloud-arrow-up"></i> Importar Arquivos de Vídeo, Áudio e Legendas SRT</h2>
           </div>
           <div class="card-body">
 
             <div class="drop-zone" id="dropZone">
-              <i class="fa-solid fa-file-video drop-icon"></i>
-              <p>Arraste e solte seus vídeos (.mp4, .avi...) e legendas (.srt) aqui</p>
+              <i class="fa-solid fa-file-arrow-up drop-icon"></i>
+              <p>Arraste e solte seus vídeos (.mp4, .avi...), áudios (.mp3, .m4a, .aac...) e legendas (.srt) aqui</p>
               <span>ou</span>
               <label for="fileUploadInput" class="btn btn-secondary btn-sm">
                 <i class="fa-solid fa-folder-open"></i> Selecionar Arquivos
               </label>
-              <input type="file" id="fileUploadInput" multiple accept="video/*,.srt,.SRT" class="hidden-input">
+              <input type="file" id="fileUploadInput" multiple accept="video/*,audio/*,.srt,.SRT" class="hidden-input">
             </div>
 
-            <small class="field-hint">Selecione um ou mais arquivos de vídeo e suas respectivas legendas SRT simultaneamente.</small>
+            <!-- Barra de Progresso de Upload -->
+            <div id="uploadProgressContainer" class="upload-progress-container hidden">
+              <div class="upload-progress-info">
+                <span id="uploadProgressText"><i class="fa-solid fa-spinner fa-spin"></i> Enviando arquivos para a pasta input: 0%</span>
+              </div>
+              <div class="progress-bar-wrapper">
+                <div class="progress-bar-fill upload-fill" id="uploadProgressBarFill" style="width: 0%;"></div>
+              </div>
+            </div>
+
+            <small class="field-hint">Selecione arquivos de vídeo, faixas de áudio e legendas SRT para a pasta <strong>input</strong>.</small>
 
           </div>
         </div>

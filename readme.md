@@ -61,18 +61,20 @@ A aplicação inclui detecção inteligente de idioma e codificação de legenda
 
 ```text
 mkv_studio/
+├── input/                    # Subpasta para arquivos importados via upload
+├── output/                   # Subpasta para arquivos MKV convertidos gerados
 ├── lib/
 │   ├── ffmpegRunner.js       # Gerenciador de processos FFmpeg (spawn, progresso e cancelamento)
 │   ├── languageDetector.js   # Validador RFC 3629 (UTF-8/UTF-16/CP1252) e reconhecedor de idiomas
 │   ├── mkvZipHelper.js       # Gerador de pacotes ZIP (PowerShell / zip CLI)
-│   └── scanner.js            # Escaneamento de pastas e pareamento de vídeos/legendas
+│   └── scanner.js            # Escaneamento de pastas e pareamento de vídeos, áudios e legendas
 ├── public/
 │   ├── css/
 │   │   └── styles.css        # Design System glassmorphic escuro moderno
 │   ├── js/
 │   │   └── app.js            # Lógica do frontend, gerenciamento de abas e consumo de SSE
 │   └── index.html            # Interface de usuário principal
-├── temp_storage/             # Armazenamento temporário para uploads e saídas ZIP
+├── temp_storage/             # Armazenamento temporário auxiliar
 ├── test_data/                # Arquivos de teste e dados de amostra
 ├── package.json              # Configurações e dependências do Node.js
 ├── server.js                 # Servidor HTTP nativo com API REST e Server-Sent Events (SSE)
@@ -203,6 +205,15 @@ O módulo [`languageDetector.js`](file:///f:/developerenv/mkv_studio/lib/languag
 ---
 
 ## 📝 Changelog
+
+### Versão 1.2.0
+- 📂 **Subpastas Input e Output**: Arquivos importados via *Modo Importar Arquivos* são salvos na pasta `input/` e os MKVs convertidos são salvos na pasta `output/`.
+- 📊 **Barra de Progresso de Upload**: Adicionada barra de progresso em tempo real no envio de arquivos via navegador.
+- 🔒 **Verificação por Checksum (SHA-256)**: Ao importar um arquivo, a aplicação verifica primeiramente pelo nome e depois pelo checksum SHA-256 para evitar regravações redundantes.
+- 🎵 **Multiplexação de Áudio Externa**: Suporte para pareamento e embutimento de faixas de áudio externas (`.mp3`, `.m4a`, `.aac`, `.flac`, `.wav`, `.ogg`, `.ac3`, `.opus`, `.wma`).
+- 🌐 **Detecção de Idioma de Áudio**: Reconhecimento automático do idioma da faixa de áudio por nome de arquivo (com fallback para `undefined` / `und`). Opções para áudio restritas a `selectable` e `none`.
+- 🎨 **Ícones Indicativos de Tipo**: Interface com ícones e cores distintas para faixas de legenda (CC) e faixas de áudio (Música/Fone).
+- 📦 **Atualização de Versão**: Versão atualizada para `1.2.0` no [`package.json`](file:///f:/developerenv/mkv_studio/package.json).
 
 ### Versão 1.1.0
 - 🎬 **Exclusividade de Queima de Legenda (Burn-in)**: Ao selecionar a opção `burn` em qualquer faixa de legenda de um vídeo, todas as demais legendas desse mesmo vídeo são ajustadas automaticamente para `none`.
